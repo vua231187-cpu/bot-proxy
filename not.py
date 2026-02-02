@@ -9,16 +9,18 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import requests
 from datetime import datetime
+import os
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+bot = telebot.TeleBot(BOT_TOKEN)
+
 
 # ================= CONFIG =================
-BOT_TOKEN = "BOT_TOKEN"
 ADMIN_IDS = [6500271609]  # ID admin
 PROXY_API_URL = "https://proxy.vn/apiv2/muaproxy.php"
 PROXY_API_KEY = "AsURTtkGHBmIOpdjmFplLp"
 PROXY_PRICE_PER_DAY = 4000
 PROXY_DURATION_HOURS = 24
-
-bot = telebot.TeleBot(BOT_TOKEN)
 
 # ================= DATABASE =================
 conn = sqlite3.connect("bot.db", check_same_thread=False)
