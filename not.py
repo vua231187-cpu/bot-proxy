@@ -514,7 +514,10 @@ def back_menu(call):
 def admin_duyet_nap(call):
     did = int(call.data.split("_")[-1])
 
-    cur.execute("SELECT user_id, amount FROM deposits WHERE id=? AND status='pending'", (did,))
+    cur.execute(
+        "SELECT user_id, amount FROM deposits WHERE id=? AND status='pending'",
+        (did,)
+    )
     d = cur.fetchone()
     if not d:
         bot.answer_callback_query(call.id, "❌ Giao dịch không hợp lệ")
@@ -522,9 +525,12 @@ def admin_duyet_nap(call):
 
     uid, amount = d
 
+    # 🔥 ĐẢM BẢO USER TỒN TẠI
+    get_user(uid)
+
     cur.execute("UPDATE deposits SET status='success' WHERE id=?", (did,))
     cur.execute(
-        "UPDATE users SET balance=balance+?, total_deposit=total_deposit+? WHERE user_id=?",
+        "UPDATE users SET balance = balance + ?, total_deposit = total_deposit + ? WHERE user_id = ?",
         (amount, amount, uid)
     )
     conn.commit()
