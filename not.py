@@ -11,7 +11,7 @@ import requests
 from datetime import datetime
 
 # ================= CONFIG =================
-BOT_TOKEN = "BOT_TOKEN"
+BOT_TOKEN = "8348184600:AAF3Wne6zgtQpsW5mWAXRNwfk7Jte_hHB7w"
 ADMIN_IDS = [6500271609]  # ID admin
 PROXY_API_URL = "https://proxy.vn/apiv2/muaproxy.php"
 PROXY_API_KEY = "AsURTtkGHBmIOpdjmFplLp"
