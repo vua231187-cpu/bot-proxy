@@ -18,7 +18,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # ================= CONFIG =================
 ADMIN_IDS = [6500271609]  # ID admin
 PROXY_API_URL = "https://proxy.vn/apiv2/muaproxy.php"
-PROXY_API_KEY = "AsURTtkGHBmIOpdjmFplLp"
+PROXY_API_KEY = "AHiZEhkiFvmMxgGZNOwenP"
 PROXY_PRICE_PER_DAY = 4000
 PROXY_DURATION_HOURS = 24
 
