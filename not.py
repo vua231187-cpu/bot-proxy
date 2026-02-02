@@ -96,10 +96,12 @@ def mua_proxy_tu_dong(days):
     url = "https://proxy.vn/apiv2/muaproxy.php"
     params = {
         "loaiproxy": "4Gvinaphone",
-        "key": PROXY_API_KEY,
+        "key": "AHiZEhkiFvmMxgGZNOwenP",
         "soluong": 1,
         "ngay": days,
-        "type": "HTTP"
+        "type": "HTTP",
+        "user": "random",
+        "password": "random"
     }
 
     try:
@@ -107,25 +109,24 @@ def mua_proxy_tu_dong(days):
         text = r.content.decode("utf-8-sig")
         data = json.loads(text)
 
-        print("DEBUG API:", data)
+        print("DEBUG PROXY API:", data)
 
     except Exception as e:
         return False, f"Lỗi kết nối API: {e}", None
 
-    # 🚨 API TRẢ LIST
+    # API trả LIST
     if not isinstance(data, list) or len(data) == 0:
-        return False, "API trả dữ liệu không hợp lệ", None
+        return False, "API không trả proxy", None
 
-    p = data[0]  # proxy nằm ở đây
+    p = data[0]
 
     proxy = p.get("proxy")
-    expire_ts = p.get("time")  # time là unix timestamp
+    live_seconds = p.get("time")
 
-    if not proxy or not expire_ts:
+    if not proxy or not live_seconds:
         return False, "Thiếu dữ liệu proxy", None
 
-    # proxy.vn trả time = thời gian sống (giây)
-    expire_time = int(time.time()) + int(expire_ts)
+    expire_time = int(time.time()) + int(live_seconds)
 
     return True, proxy, expire_time
 
