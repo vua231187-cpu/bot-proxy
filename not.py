@@ -452,6 +452,88 @@ def admin_tracuu(msg):
 💳 Tổng nạp: {u[2]:,}"""
     )
 
+@bot.message_handler(commands=["cong"])
+def admin_cong_tien(msg):
+    if not is_admin(msg.from_user.id):
+        return
+
+    try:
+        _, uid, amount = msg.text.split()
+        uid = int(uid)
+        amount = int(amount)
+        if amount <= 0:
+            raise ValueError
+    except:
+        bot.reply_to(msg, "❌ Dùng đúng cú pháp:\n/cong <user_id> <số tiền>")
+        return
+
+    get_user(uid)
+
+    cur.execute(
+        "UPDATE users SET balance = balance + ?, total_deposit = total_deposit + ? WHERE user_id=?",
+        (amount, amount, uid)
+    )
+    conn.commit()
+
+    bot.send_message(
+        msg.chat.id,
+        f"✅ ĐÃ CỘNG TIỀN\n\n"
+        f"👤 User: {uid}\n"
+        f"💰 +{amount:,} VND"
+    )
+
+    bot.send_message(
+        uid,
+        f"💰 TÀI KHOẢN ĐƯỢC CỘNG TIỀN\n\n"
+        f"➕ {amount:,} VND\n"
+        f"👑 Bởi admin"
+    )
+ @bot.message_handler(commands=["tru"])
+def admin_tru_tien(msg):
+    if not is_admin(msg.from_user.id):
+        return
+
+    try:
+        _, uid, amount = msg.text.split()
+        uid = int(uid)
+        amount = int(amount)
+        if amount <= 0:
+            raise ValueError
+    except:
+        bot.reply_to(msg, "❌ Dùng đúng cú pháp:\n/tru <user_id> <số tiền>")
+        return
+
+    u = get_user(uid)
+    balance = u[1]
+
+    if balance < amount:
+        bot.reply_to(
+            msg,
+            f"❌ Không đủ tiền để trừ\n"
+            f"💰 Số dư hiện tại: {balance:,} VND"
+        )
+        return
+
+    cur.execute(
+        "UPDATE users SET balance = balance - ? WHERE user_id=?",
+        (amount, uid)
+    )
+    conn.commit()
+
+    bot.send_message(
+        msg.chat.id,
+        f"✅ ĐÃ TRỪ TIỀN\n\n"
+        f"👤 User: {uid}\n"
+        f"💰 -{amount:,} VND"
+    )
+
+    bot.send_message(
+        uid,
+        f"⚠️ TÀI KHOẢN BỊ TRỪ TIỀN\n\n"
+        f"➖ {amount:,} VND\n"
+        f"👑 Bởi admin"
+    )   
+    
 @bot.message_handler(func=lambda m: is_admin(m.from_user.id) and m.text == "🌐 Quản lý proxy")
 def admin_proxy(msg):
     cur.execute("SELECT COUNT(*) FROM proxies")
