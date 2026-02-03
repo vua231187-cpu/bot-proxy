@@ -386,8 +386,7 @@ def thong_tin(msg):
 @bot.message_handler(func=lambda m: m.text == "📞 Hỗ trợ")
 def ho_tro(msg):
     bot.send_message(msg.chat.id,
-        "📞 HỖ TRỢ\nAdmin: @tuananhdz\nID: 6500271609"
-        "💖Admin rất đẹp tra"
+        "📞 HỖ TRỢ\nAdmin: @tuananhdz\nID: 6500271609\n🥰Admin rất đẹp trai"
     )
 
 # ================= ADMIN =================
