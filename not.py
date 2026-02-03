@@ -19,7 +19,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 ADMIN_IDS = [6500271609]  # ID admin
 PROXY_API_URL = "https://proxy.vn/apiv2/muaproxy.php"
 PROXY_API_KEY = "ASLlrELMIToprMeJMhGdRB"
-PROXY_PRICE_PER_DAY = 4000
+PROXY_PRICE_PER_DAY = 2500
 PROXY_DURATION_HOURS = 24
 
 # ================= DATABASE =================
@@ -190,7 +190,7 @@ def start(msg):
         bot.send_message(uid, "👑 CHẾ ĐỘ QUẢN TRỊ VIÊN", reply_markup=admin_menu())
     else:
         get_user(uid)
-        bot.send_message(uid, "👋 Chào mừng bạn!", reply_markup=user_menu())
+        bot.send_message(uid, "👋 Chào mừng bạn đến với bot proxy sạch giả rẻ!", reply_markup=user_menu())
 
 # ================= USER =================
 @bot.message_handler(func=lambda m: m.text == "🛒 Mua proxy")
@@ -259,7 +259,7 @@ def nap_tien(msg):
     👉 Gõ: /nap + số tiền
     📎 Ví dụ: /nap 50000
 
-    💵 Nạp tối thiểu: 20,000 VND
+    💵 Nạp tối thiểu: 5,000 VND
     """
     )
 
@@ -282,8 +282,8 @@ def user_nap(msg):
         bot.reply_to(msg, "❌ Dùng đúng cú pháp: /nap 50000")
         return
 
-    if amount < 20000:
-        bot.reply_to(msg, "❌ Nạp tối thiểu 20,000 VND")
+    if amount < 5000:
+        bot.reply_to(msg, "❌ Nạp tối thiểu 5,000 VND")
         return
 
     cur.execute(
@@ -387,6 +387,7 @@ def thong_tin(msg):
 def ho_tro(msg):
     bot.send_message(msg.chat.id,
         "📞 HỖ TRỢ\nAdmin: @tuananhdz\nID: 6500271609"
+        "💖Admin rất đẹp tra"
     )
 
 # ================= ADMIN =================
