@@ -488,7 +488,7 @@ def admin_cong_tien(msg):
         f"➕ {amount:,} VND\n"
         f"👑 Bởi admin"
     )
- @bot.message_handler(commands=["tru"])
+@bot.message_handler(commands=["tru"])
 def admin_tru_tien(msg):
     if not is_admin(msg.from_user.id):
         return
