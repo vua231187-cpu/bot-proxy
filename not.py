@@ -18,7 +18,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # ================= CONFIG =================
 ADMIN_IDS = [6500271609]  # ID admin
 PROXY_API_URL = "https://proxy.vn/apiv2/muaproxy.php"
-PROXY_API_KEY = "AHiZEhkiFvmMxgGZNOwenP"
+PROXY_API_KEY = "ASLlrELMIToprMeJMhGdRB"
 PROXY_PRICE_PER_DAY = 4000
 PROXY_DURATION_HOURS = 24
 
@@ -96,7 +96,7 @@ def mua_proxy_tu_dong(days):
     url = "https://proxy.vn/apiv2/muaproxy.php"
     params = {
         "loaiproxy": "4Gvinaphone",
-        "key": "AHiZEhkiFvmMxgGZNOwenP",
+        "key": PROXY_API_KEY,
         "soluong": 1,
         "ngay": days,
         "type": "HTTP",
@@ -114,14 +114,14 @@ def mua_proxy_tu_dong(days):
     except Exception as e:
         return False, f"Lỗi kết nối API: {e}", None
 
-    # API trả LIST
+    # ✅ API proxy.vn trả LIST
     if not isinstance(data, list) or len(data) == 0:
         return False, "API không trả proxy", None
 
     p = data[0]
 
     proxy = p.get("proxy")
-    live_seconds = p.get("time")
+    live_seconds = p.get("time")  # số giây sử dụng
 
     if not proxy or not live_seconds:
         return False, "Thiếu dữ liệu proxy", None
