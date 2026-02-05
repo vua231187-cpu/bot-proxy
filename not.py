@@ -11,16 +11,20 @@ import requests
 from datetime import datetime
 import os
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = "BOT_TOKEN"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 
-# ================= CONFIG =================
+# ================= proxy tĩnh CONFIG =================
 ADMIN_IDS = [6500271609]  # ID admin
 PROXY_API_URL = "https://proxy.vn/apiv2/muaproxy.php"
 PROXY_API_KEY = "ASLlrELMIToprMeJMhGdRB"
 PROXY_PRICE_PER_DAY = 2500
 PROXY_DURATION_HOURS = 24
+# ===== PROXY XOAY CONFIG =====
+PROXY_XOAY_API_URL = "https://proxy.vn/proxyxoay/apimuangay.php"
+PROXY_XOAY_API_KEY = "ASLlrELMIToprMeJMhGdRB"
+PROXY_XOAY_PRICE_PER_DAY = 5000
 
 # ================= DATABASE =================
 conn = sqlite3.connect("bot.db", check_same_thread=False)
@@ -56,11 +60,47 @@ conn.commit()
 
 buy_proxy_state = {}
 # uid: {
-#   "step": "day" | "account",
+#   "step": "type" | "day",
+#   "type": "static" | "rotate",
 #   "days": int
 # }
 
 # ================= HELPERS =================
+import re
+
+def mua_proxy_xoay(days, quantity=1):
+    params = {
+        "key": PROXY_XOAY_API_KEY,
+        "thoigian": days,
+        "soluong": quantity
+    }
+
+    try:
+        r = requests.get(
+            PROXY_XOAY_API_URL,
+            params=params,
+            timeout=20,
+            verify=False
+        )
+        raw = r.text.strip()
+
+        if not raw:
+            return False, "API proxy xoay không trả dữ liệu", None
+
+        # 🔑 KEY XOAY = dòng đầu tiên
+        keyxoay = raw.splitlines()[0].strip()
+
+        if len(keyxoay) < 10:
+            return False, f"Key proxy xoay không hợp lệ:\n{raw}", None
+
+        expire_time = int(time.time()) + days * 86400
+
+        # ✅ TRẢ KEY THAY VÌ LINK
+        return True, keyxoay, expire_time
+
+    except Exception as e:
+        return False, f"Lỗi API proxy xoay: {e}", None
+
 def buy_proxy_real(days, username, password):
     payload = {
         "key": PROXY_API_KEY,
@@ -196,19 +236,47 @@ def start(msg):
 @bot.message_handler(func=lambda m: m.text == "🛒 Mua proxy")
 def buy_proxy_start(msg):
     uid = msg.from_user.id
-    buy_proxy_state[uid] = {"step": "day"}
+    buy_proxy_state[uid] = {"step": "type"}
+
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.row("🔒 Proxy tĩnh", "🔄 Proxy xoay")
+    kb.row("⬅️ Quay lại")
 
     bot.send_message(
         uid,
-        "🌐 PROXY HTTP\n\n"
-        f"💰 Giá: {format(PROXY_PRICE_PER_DAY, ',')} VND / ngày"
-        "✍️ Nhập số ngày muốn mua\n"
-        "📌 Ví dụ: 7",
-        reply_markup=types.ReplyKeyboardMarkup(resize_keyboard=True).row("⬅️ Quay lại")
+        "🌐 CHỌN LOẠI PROXY\n\n"
+        "🔒 Proxy tĩnh: IP cố định\n"
+        "🔄 Proxy xoay: IP tự xoay",
+        reply_markup=kb
     )
 
 @bot.message_handler(func=lambda m: m.from_user.id in buy_proxy_state and
-                     buy_proxy_state[m.from_user.id]["step"] == "day")
+                                buy_proxy_state[m.from_user.id]["step"] == "type")
+def buy_proxy_choose_type(msg):
+    uid = msg.from_user.id
+    text = msg.text
+
+    if text == "🔒 Proxy tĩnh":
+        buy_proxy_state[uid]["type"] = "static"
+        price = PROXY_PRICE_PER_DAY
+    elif text == "🔄 Proxy xoay":
+        buy_proxy_state[uid]["type"] = "rotate"
+        price = PROXY_XOAY_PRICE_PER_DAY
+    else:
+        bot.reply_to(msg, "❌ Vui lòng chọn bằng nút")
+        return
+
+    buy_proxy_state[uid]["step"] = "day"
+
+    bot.send_message(
+        uid,
+        f"✍️ Nhập số ngày muốn mua\n"
+        f"💰 Giá: {price:,} VND / ngày\n"
+        "📌 Ví dụ: 3"
+    )
+
+@bot.message_handler(func=lambda m: m.from_user.id in buy_proxy_state and
+                                buy_proxy_state[m.from_user.id]["step"] == "day")
 def buy_proxy_day(msg):
     uid = msg.from_user.id
 
@@ -220,7 +288,11 @@ def buy_proxy_day(msg):
         bot.reply_to(msg, "❌ Nhập số ngày hợp lệ")
         return
 
-    total_price = days * PROXY_PRICE_PER_DAY
+    proxy_type = buy_proxy_state[uid]["type"]
+
+    price = PROXY_PRICE_PER_DAY if proxy_type == "static" else PROXY_XOAY_PRICE_PER_DAY
+    total_price = days * price
+
     buy_proxy_state[uid]["days"] = days
 
     kb = types.InlineKeyboardMarkup()
@@ -231,12 +303,11 @@ def buy_proxy_day(msg):
 
     bot.send_message(
         uid,
-        f"""🔐 XÁC NHẬN MUA PROXY
+        f"""🧾 XÁC NHẬN MUA PROXY
 
+🌐 Loại: {"Proxy tĩnh" if proxy_type=="static" else "Proxy xoay"}
 📅 Số ngày: {days}
-💰 Giá: {total_price:,} VND
-🌐 Loại: 4G Datacenter (HTTP)
-👤 User/Pass: Tự động
+💰 Tổng tiền: {total_price:,} VND
 """,
         reply_markup=kb
     )
@@ -428,6 +499,77 @@ def admin_confirm(msg):
     bot.send_message(uid,
         f"✅ NẠP TIỀN THÀNH CÔNG\n💵 {amount:,} VND"
     )
+
+@bot.message_handler(commands=["tball"])
+def admin_notify_all(msg):
+    if not is_admin(msg.from_user.id):
+        return
+
+    try:
+        content = msg.text.split(" ", 1)[1]
+    except:
+        bot.reply_to(msg, "❌ Dùng đúng cú pháp:\n/tball <nội dung thông báo>")
+        return
+
+    cur.execute("SELECT user_id FROM users")
+    users = cur.fetchall()
+
+    sent = 0
+    fail = 0
+
+    for (uid,) in users:
+        try:
+            bot.send_message(
+                uid,
+                f"📢 THÔNG BÁO\n\n{content}"
+            )
+            sent += 1
+        except:
+            fail += 1
+
+    bot.send_message(
+        msg.chat.id,
+        f"✅ Đã gửi thông báo\n"
+        f"📨 Thành công: {sent}\n"
+        f"❌ Thất bại: {fail}"
+    )
+
+@bot.message_handler(commands=["tbrieng"])
+def admin_notify_private(msg):
+    if not is_admin(msg.from_user.id):
+        return
+
+    parts = msg.text.split(" ", 2)
+
+    if len(parts) < 3:
+        bot.reply_to(
+            msg,
+            "❌ Dùng đúng cú pháp:\n/tbrieng <telegram_id> <nội dung>"
+        )
+        return
+
+    try:
+        uid = int(parts[1])
+    except:
+        bot.reply_to(msg, "❌ Telegram ID không hợp lệ")
+        return
+
+    content = parts[2]
+
+    try:
+        bot.send_message(
+            uid,
+            f"📩 THÔNG BÁO RIÊNG\n\n{content}"
+        )
+        bot.send_message(
+            msg.chat.id,
+            f"✅ Đã gửi thông báo cho user {uid}"
+        )
+    except Exception as e:
+        bot.send_message(
+            msg.chat.id,
+            f"❌ Không gửi được cho user {uid}\n{e}"
+        )
 
 @bot.message_handler(commands=["tracuu"])
 def admin_tracuu(msg):
@@ -674,29 +816,33 @@ def confirm_buy_proxy(call):
         return
 
     days = buy_proxy_state[uid]["days"]
-    total_price = days * PROXY_PRICE_PER_DAY
+    proxy_type = buy_proxy_state[uid]["type"]
+
+    price = PROXY_PRICE_PER_DAY if proxy_type == "static" else PROXY_XOAY_PRICE_PER_DAY
+    total_price = days * price
 
     cur.execute("SELECT balance FROM users WHERE user_id=?", (uid,))
-    row = cur.fetchone()
-    balance = row[0] if row else 0
+    balance = cur.fetchone()[0]
 
     if balance < total_price:
         bot.send_message(uid, "❌ Số dư không đủ")
-        bot.answer_callback_query(call.id)
         buy_proxy_state.pop(uid, None)
         return
 
     bot.edit_message_text(
-        "⏳ Đang tự động mua proxy...",
+        "⏳ Đang mua proxy...",
         call.message.chat.id,
         call.message.message_id
     )
 
-    ok, proxy, expire_time = mua_proxy_tu_dong(days)
+    # ===== GỌI API THEO LOẠI =====
+    if proxy_type == "static":
+        ok, proxy, expire_time = mua_proxy_tu_dong(days)
+    else:
+        ok, proxy, expire_time = mua_proxy_xoay(days)
 
     if not ok:
         bot.send_message(uid, f"❌ Mua proxy thất bại:\n{proxy}")
-        bot.answer_callback_query(call.id)
         buy_proxy_state.pop(uid, None)
         return
 
@@ -715,20 +861,21 @@ def confirm_buy_proxy(call):
     buy_proxy_state.pop(uid, None)
 
     bot.send_message(
-        uid,
-        f"""✅ **MUA PROXY THÀNH CÔNG**
+    uid,
+    f"""✅ MUA PROXY THÀNH CÔNG
 
-    🌐 Proxy:
-    `{proxy}`
+🌐 Loại: {"Proxy tĩnh" if proxy_type=="static" else "Proxy xoay"}
+🔐 Proxy:
+`{proxy}`
 
-    ⏳ Hết hạn:
-    {datetime.fromtimestamp(expire_time).strftime('%d/%m/%Y %H:%M')}
+⏳ Hết hạn:
+{datetime.fromtimestamp(expire_time).strftime('%d/%m/%Y %H:%M')}
 
-    📌 Định dạng: ip:port:user:pass
-    """,
-        parse_mode="Markdown",
-        reply_markup=user_menu()
-    )
+📤 vui lòng gửi key này cho admin đz: @tuananhdz
+""",
+    parse_mode="Markdown",
+    reply_markup=user_menu()
+)
 
 @bot.callback_query_handler(func=lambda c: c.data == "cancel_buy_proxy")
 def cancel_buy_proxy(call):
@@ -751,4 +898,3 @@ def back_to_menu(msg):
 # ================= RUN =================
 print("BOT RUNNING...")
 bot.infinity_polling()
-
