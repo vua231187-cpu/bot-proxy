@@ -11,7 +11,7 @@ import requests
 from datetime import datetime
 import os
 
-BOT_TOKEN = "BOT_TOKEN"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 
