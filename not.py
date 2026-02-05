@@ -207,6 +207,11 @@ def has_pending_deposit(uid):
     )
     return cur.fetchone()[0] > 0
 
+@bot.message_handler(content_types=["text"])
+def auto_save_user(msg):
+    uid = msg.from_user.id
+    get_user(uid)
+
 # ================= MENUS =================
 def user_menu():
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -517,13 +522,13 @@ def admin_notify_all(msg):
     sent = 0
     fail = 0
 
-   for (uid,) in users:
-    try:
-        bot.send_message(uid, f"📢 THÔNG BÁO\n\n{content}")
-        sent += 1
-    except telebot.apihelper.ApiTelegramException as e:
-        fail += 1
-        print("BLOCK OR FAIL:", uid)
+    for (uid,) in users:
+        try:
+            bot.send_message(uid, f"📢 THÔNG BÁO\n\n{content}")
+            sent += 1
+        except telebot.apihelper.ApiTelegramException:
+            fail += 1
+            print("BLOCK OR FAIL:", uid)
 
     bot.send_message(
         msg.chat.id,
