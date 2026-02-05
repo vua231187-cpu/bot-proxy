@@ -517,15 +517,13 @@ def admin_notify_all(msg):
     sent = 0
     fail = 0
 
-    for (uid,) in users:
-        try:
-            bot.send_message(
-                uid,
-                f"📢 THÔNG BÁO\n\n{content}"
-            )
-            sent += 1
-        except:
-            fail += 1
+   for (uid,) in users:
+    try:
+        bot.send_message(uid, f"📢 THÔNG BÁO\n\n{content}")
+        sent += 1
+    except telebot.apihelper.ApiTelegramException as e:
+        fail += 1
+        print("BLOCK OR FAIL:", uid)
 
     bot.send_message(
         msg.chat.id,
@@ -682,22 +680,25 @@ def admin_proxy(msg):
     total = cur.fetchone()[0]
     bot.send_message(msg.chat.id, f"🌐 Proxy đã bán: {total}")
 
-@bot.message_handler(func=lambda m: is_admin(m.from_user.id) and m.text == "📊 Thống kê")
+@bot.message_handler(func=lambda m: is_admin(m.from_user.id) and m.text and m.text.startswith("📊"))
 def admin_stats(msg):
     cur.execute("SELECT COUNT(*) FROM users")
     users = cur.fetchone()[0]
+
     cur.execute("SELECT SUM(total_deposit) FROM users")
     total = cur.fetchone()[0] or 0
+
     cur.execute("SELECT COUNT(*) FROM proxies")
     sold = cur.fetchone()[0]
 
-    bot.send_message(msg.chat.id,
-        f"""📊 THỐNG KÊ
+    bot.send_message(
+        msg.chat.id,
+        f"""📊 THỐNG KÊ BOT
 
-👥 User: {users}
-💰 Tổng nạp: {total:,}
-🌐 Proxy bán: {sold}
-📈 Thu nhập: {total:,}"""
+👤 Tổng user: {users}
+💰 Tổng nạp: {total:,} VND
+🌐 Proxy đã bán: {sold}
+"""
     )
 
 @bot.message_handler(func=lambda m: is_admin(m.from_user.id) and m.text == "👥 Người dùng")
