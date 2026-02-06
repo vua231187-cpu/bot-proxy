@@ -207,11 +207,6 @@ def has_pending_deposit(uid):
     )
     return cur.fetchone()[0] > 0
 
-@bot.message_handler(content_types=["text"])
-def auto_save_user(msg):
-    uid = msg.from_user.id
-    get_user(uid)
-
 # ================= MENUS =================
 def user_menu():
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -231,11 +226,17 @@ def admin_menu():
 @bot.message_handler(commands=["start"])
 def start(msg):
     uid = msg.from_user.id
+    print("START:", uid)
+
     if is_admin(uid):
         bot.send_message(uid, "👑 CHẾ ĐỘ QUẢN TRỊ VIÊN", reply_markup=admin_menu())
     else:
         get_user(uid)
-        bot.send_message(uid, "👋 Chào mừng bạn đến với bot proxy sạch giả rẻ!", reply_markup=user_menu())
+        bot.send_message(
+            uid,
+            "👋 Chào mừng bạn đến với bot proxy sạch giá rẻ!",
+            reply_markup=user_menu()
+        )
 
 # ================= USER =================
 @bot.message_handler(func=lambda m: m.text == "🛒 Mua proxy")
@@ -524,11 +525,13 @@ def admin_notify_all(msg):
 
     for (uid,) in users:
         try:
-            bot.send_message(uid, f"📢 THÔNG BÁO\n\n{content}")
+            bot.send_message(
+                uid,
+                f"📢 THÔNG BÁO\n\n{content}"
+            )
             sent += 1
-        except telebot.apihelper.ApiTelegramException:
+        except:
             fail += 1
-            print("BLOCK OR FAIL:", uid)
 
     bot.send_message(
         msg.chat.id,
@@ -685,25 +688,22 @@ def admin_proxy(msg):
     total = cur.fetchone()[0]
     bot.send_message(msg.chat.id, f"🌐 Proxy đã bán: {total}")
 
-@bot.message_handler(func=lambda m: is_admin(m.from_user.id) and m.text and m.text.startswith("📊"))
+@bot.message_handler(func=lambda m: is_admin(m.from_user.id) and m.text == "📊 Thống kê")
 def admin_stats(msg):
     cur.execute("SELECT COUNT(*) FROM users")
     users = cur.fetchone()[0]
-
     cur.execute("SELECT SUM(total_deposit) FROM users")
     total = cur.fetchone()[0] or 0
-
     cur.execute("SELECT COUNT(*) FROM proxies")
     sold = cur.fetchone()[0]
 
-    bot.send_message(
-        msg.chat.id,
-        f"""📊 THỐNG KÊ BOT
+    bot.send_message(msg.chat.id,
+        f"""📊 THỐNG KÊ
 
-👤 Tổng user: {users}
-💰 Tổng nạp: {total:,} VND
-🌐 Proxy đã bán: {sold}
-"""
+👥 User: {users}
+💰 Tổng nạp: {total:,}
+🌐 Proxy bán: {sold}
+📈 Thu nhập: {total:,}"""
     )
 
 @bot.message_handler(func=lambda m: is_admin(m.from_user.id) and m.text == "👥 Người dùng")
@@ -902,5 +902,6 @@ def back_to_menu(msg):
     bot.send_message(uid, "⬅️ Menu chính", reply_markup=user_menu())
 
 # ================= RUN =================
+bot.remove_webhook()
 print("BOT RUNNING...")
-bot.infinity_polling()
+bot.infinity_polling(skip_pending=True)
