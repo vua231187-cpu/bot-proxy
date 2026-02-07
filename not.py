@@ -18,7 +18,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # ================= proxy tĩnh CONFIG =================
 ADMIN_IDS = [6500271609]  # ID admin
 PROXY_API_URL = "https://proxy.vn/apiv2/muaproxy.php"
-PROXY_API_KEY = "ASLlrELMIToprMeJMhGdRB"
+PROXY_API_KEY = "AdfzCPKHxbGbgYJlvvwsyx"
 PROXY_PRICE_PER_DAY = 2500
 PROXY_DURATION_HOURS = 24
 # ===== PROXY XOAY CONFIG =====
@@ -134,14 +134,16 @@ def is_admin(uid):
 
 def mua_proxy_tu_dong(days):
     url = "https://proxy.vn/apiv2/muaproxy.php"
+
+    # API mới bạn yêu cầu dùng proxy Viettel với key mới
     params = {
-        "loaiproxy": "4Gvinaphone",
-        "key": PROXY_API_KEY,
+        "loaiproxy": "Viettel",                     # đổi từ 4Gvinaphone thành Viettel
+        "key": "AdfzCPKHxbGbgYJlvvwsyx",             # key bạn cung cấp
         "soluong": 1,
         "ngay": days,
         "type": "HTTP",
-        "user": "random",
-        "password": "random"
+        "user": "random",                            # giữ random user
+        "password": "random"                         # giữ random password
     }
 
     try:
@@ -154,7 +156,7 @@ def mua_proxy_tu_dong(days):
     except Exception as e:
         return False, f"Lỗi kết nối API: {e}", None
 
-    # ✅ API proxy.vn trả LIST
+    # API proxy.vn trả list object
     if not isinstance(data, list) or len(data) == 0:
         return False, "API không trả proxy", None
 
