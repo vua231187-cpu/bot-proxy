@@ -151,16 +151,15 @@ def mua_proxy_tu_dong(days):
             verify=False
         )
 
-        text = r.text.strip()
-        data = json.loads(text)
+        raw = r.content.decode("utf-8-sig").strip()  # ✅ FIX BOM
+        data = json.loads(raw)
         print("DEBUG STATIC PROXY:", data)
 
     except Exception as e:
         return False, f"Lỗi kết nối API: {e}", None
 
-    # ✅ API TRẢ LIST
     if not isinstance(data, list):
-        return False, f"API sai định dạng\n{text}", None
+        return False, f"API sai định dạng\n{raw}", None
 
     proxy_info = None
     for item in data:
@@ -169,7 +168,7 @@ def mua_proxy_tu_dong(days):
             break
 
     if not proxy_info:
-        return False, f"API không trả proxy\n{text}", None
+        return False, f"API không trả proxy\n{raw}", None
 
     proxy = proxy_info["proxy"]
     expire_time = proxy_info.get("time")
