@@ -157,22 +157,28 @@ def mua_proxy_tu_dong(days):
     except Exception as e:
         return False, f"Lỗi kết nối API: {e}", None
 
-    if not isinstance(data, list) or len(data) == 0:
-        return False, "API không trả proxy", None
+    if not isinstance(data, dict) or "data" not in data or not data["data"]:
+        return False, f"API không trả proxy\n{text}", None
 
-    p = data[0]
+    p = data["data"][0]
 
-    ip = p.get("ip")
-    port = p.get("port")
-    user = p.get("user")
-    password = p.get("password")
+    # ✅ ƯU TIÊN FIELD proxy nếu có
+    if "proxy" in p:
+        proxy = p["proxy"]
+    else:
+        ip = p.get("ip")
+        port = p.get("port")
+        user = p.get("user") or p.get("username", "")
+        password = p.get("password", "")
+
+        if not ip or not port:
+            return False, f"Thiếu IP/PORT\n{p}", None
+
+        proxy = f"{ip}:{port}:{user}:{password}"
+
     expired_at = p.get("expired_at")
-
-    if not ip or not port or not expired_at:
-        return False, "Thiếu dữ liệu proxy", None
-
-    # format proxy chuẩn
-    proxy = f"{ip}:{port}:{user}:{password}"
+    if not expired_at:
+        return False, f"Thiếu thời gian hết hạn\n{p}", None
 
     expire_time = int(
         datetime.strptime(expired_at, "%Y-%m-%d %H:%M:%S").timestamp()
