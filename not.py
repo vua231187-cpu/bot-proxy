@@ -133,42 +133,50 @@ def is_admin(uid):
     return uid in ADMIN_IDS
 
 def mua_proxy_tu_dong(days):
-    url = "https://proxy.vn/apiv2/muaproxy.php"
-
-    # API mới bạn yêu cầu dùng proxy Viettel với key mới
     params = {
-        "loaiproxy": "Viettel",                     # đổi từ 4Gvinaphone thành Viettel
-        "key": "AdfzCPKHxbGbgYJlvvwsyx",             # key bạn cung cấp
+        "loaiproxy": "Viettel",
+        "key": PROXY_API_KEY,
         "soluong": 1,
         "ngay": days,
         "type": "HTTP",
-        "user": "random",                            # giữ random user
-        "password": "random"                         # giữ random password
+        "user": "random",
+        "password": "random"
     }
 
     try:
-        r = requests.get(url, params=params, timeout=20, verify=False)
+        r = requests.get(
+            PROXY_API_URL,
+            params=params,
+            timeout=20,
+            verify=False
+        )
         text = r.content.decode("utf-8-sig")
         data = json.loads(text)
-
-        print("DEBUG PROXY API:", data)
+        print("DEBUG STATIC PROXY:", data)
 
     except Exception as e:
         return False, f"Lỗi kết nối API: {e}", None
 
-    # API proxy.vn trả list object
     if not isinstance(data, list) or len(data) == 0:
         return False, "API không trả proxy", None
 
     p = data[0]
 
-    proxy = p.get("proxy")
-    live_seconds = p.get("time")  # số giây sử dụng
+    ip = p.get("ip")
+    port = p.get("port")
+    user = p.get("user")
+    password = p.get("password")
+    expired_at = p.get("expired_at")
 
-    if not proxy or not live_seconds:
+    if not ip or not port or not expired_at:
         return False, "Thiếu dữ liệu proxy", None
 
-    expire_time = int(time.time()) + int(live_seconds)
+    # format proxy chuẩn
+    proxy = f"{ip}:{port}:{user}:{password}"
+
+    expire_time = int(
+        datetime.strptime(expired_at, "%Y-%m-%d %H:%M:%S").timestamp()
+    )
 
     return True, proxy, expire_time
 
