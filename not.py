@@ -825,10 +825,12 @@ def admin_tu_choi(call):
 
 @bot.callback_query_handler(func=lambda c: c.data == "confirm_buy_proxy")
 def confirm_buy_proxy(call):
+    bot.answer_callback_query(call.id)
+
     uid = call.from_user.id
 
     if uid not in buy_proxy_state:
-        bot.answer_callback_query(call.id, "Phiên đã hết hạn")
+        bot.send_message(uid, "❌ Phiên mua đã hết hạn")
         return
 
     days = buy_proxy_state[uid]["days"]
@@ -841,17 +843,20 @@ def confirm_buy_proxy(call):
     balance = cur.fetchone()[0]
 
     if balance < total_price:
-        bot.send_message(uid, "❌ Số dư không đủ")
+        bot.edit_message_text(
+            "❌ Số dư không đủ để mua proxy",
+            call.message.chat.id,
+            call.message.message_id
+        )
         buy_proxy_state.pop(uid, None)
         return
 
     bot.edit_message_text(
-        "⏳ Đang mua proxy...",
+        "⏳ Đang mua proxy, vui lòng đợi...",
         call.message.chat.id,
         call.message.message_id
     )
 
-    # ===== GỌI API THEO LOẠI =====
     if proxy_type == "static":
         ok, proxy, expire_time = mua_proxy_tu_dong(days)
     else:
@@ -862,7 +867,6 @@ def confirm_buy_proxy(call):
         buy_proxy_state.pop(uid, None)
         return
 
-    # Trừ tiền
     cur.execute(
         "UPDATE users SET balance = balance - ? WHERE user_id=?",
         (total_price, uid)
@@ -877,21 +881,20 @@ def confirm_buy_proxy(call):
     buy_proxy_state.pop(uid, None)
 
     bot.send_message(
-    uid,
-    f"""✅ MUA PROXY THÀNH CÔNG
+        uid,
+        f"""✅ MUA PROXY THÀNH CÔNG
 
-🌐 Loại: {"Proxy tĩnh" if proxy_type=="static" else "Proxy xoay"}
 🔐 Proxy:
 `{proxy}`
 
 ⏳ Hết hạn:
 {datetime.fromtimestamp(expire_time).strftime('%d/%m/%Y %H:%M')}
 
-📤 vui lòng gửi key này cho admin đz: @tuananhdz
+📤 Gửi key này cho admin: @tuananhdz
 """,
-    parse_mode="Markdown",
-    reply_markup=user_menu()
-)
+        parse_mode="Markdown",
+        reply_markup=user_menu()
+    )
 
 @bot.callback_query_handler(func=lambda c: c.data == "cancel_buy_proxy")
 def cancel_buy_proxy(call):
