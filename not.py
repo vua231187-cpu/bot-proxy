@@ -150,39 +150,32 @@ def mua_proxy_tu_dong(days):
             timeout=20,
             verify=False
         )
-        text = r.content.decode("utf-8-sig")
+
+        text = r.text.strip()
         data = json.loads(text)
         print("DEBUG STATIC PROXY:", data)
 
     except Exception as e:
         return False, f"Lỗi kết nối API: {e}", None
 
-    if not isinstance(data, dict) or "data" not in data or not data["data"]:
+    # ✅ API TRẢ LIST
+    if not isinstance(data, list):
+        return False, f"API sai định dạng\n{text}", None
+
+    proxy_info = None
+    for item in data:
+        if isinstance(item, dict) and "proxy" in item:
+            proxy_info = item
+            break
+
+    if not proxy_info:
         return False, f"API không trả proxy\n{text}", None
 
-    p = data["data"][0]
+    proxy = proxy_info["proxy"]
+    expire_time = proxy_info.get("time")
 
-    # ✅ ƯU TIÊN FIELD proxy nếu có
-    if "proxy" in p:
-        proxy = p["proxy"]
-    else:
-        ip = p.get("ip")
-        port = p.get("port")
-        user = p.get("user") or p.get("username", "")
-        password = p.get("password", "")
-
-        if not ip or not port:
-            return False, f"Thiếu IP/PORT\n{p}", None
-
-        proxy = f"{ip}:{port}:{user}:{password}"
-
-    expired_at = p.get("expired_at")
-    if not expired_at:
-        return False, f"Thiếu thời gian hết hạn\n{p}", None
-
-    expire_time = int(
-        datetime.strptime(expired_at, "%Y-%m-%d %H:%M:%S").timestamp()
-    )
+    if not expire_time:
+        return False, f"Thiếu thời gian hết hạn\n{proxy_info}", None
 
     return True, proxy, expire_time
 
